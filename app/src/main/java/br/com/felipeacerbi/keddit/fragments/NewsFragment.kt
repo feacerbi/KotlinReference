@@ -1,21 +1,41 @@
 package br.com.felipeacerbi.keddit.fragments
 
 import android.os.Bundle
-import android.support.v4.app.Fragment
+import android.support.design.widget.Snackbar
 import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import br.com.felipeacerbi.keddit.R
 import br.com.felipeacerbi.keddit.adapters.NewsAdapter
-import br.com.felipeacerbi.keddit.models.RedditNewsItem
+import br.com.felipeacerbi.keddit.models.RedditNews
+import br.com.felipeacerbi.keddit.utils.InfiniteScrollListener
+import br.com.felipeacerbi.keddit.utils.NewsManager
 import br.com.felipeacerbi.keddit.utils.inflate
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.news_fragment.*
 
 /**
  * Created by feaac on 5/19/2017.
  */
-class NewsFragment : Fragment() {
+class NewsFragment : RxBaseFragment() {
+
+    companion object {
+        private val KEY_REDDIT_NEWS = "redditNews"
+    }
+
+    val generalLayoutManager: RecyclerView.LayoutManager by lazy {
+        LinearLayoutManager(context)
+    }
+
+    val newsManager: NewsManager by lazy {
+        NewsManager()
+    }
+
+    private var redditNews: RedditNews? = null
 
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return container?.inflate(R.layout.news_fragment)
@@ -24,24 +44,38 @@ class NewsFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
-        news_list.setHasFixedSize(true)
-        news_list.layoutManager = LinearLayoutManager(context)
+        news_list.apply {
+            setHasFixedSize(true)
+            layoutManager = generalLayoutManager
+            clearOnScrollListeners()
+            addOnScrollListener(
+                    InfiniteScrollListener({ requestNews() }, generalLayoutManager as LinearLayoutManager)
+            )
+        }
+
         initAdapter()
 
-        if (savedInstanceState == null) {
-            val news = mutableListOf<RedditNewsItem>()
-            for (i in 1..10) {
-                news.add(RedditNewsItem(
-                        "author$i",
-                        "Title $i",
-                        i, // number of comments
-                        1457207701L - i * 200, // time
-                        "http://lorempixel.com/200/200/technics/$i", // image url
-                        "url"
-                ))
-            }
-            (news_list.adapter as NewsAdapter).addNews(news)
+        if (savedInstanceState != null && savedInstanceState.containsKey(KEY_REDDIT_NEWS)) {
+            redditNews = savedInstanceState.get(KEY_REDDIT_NEWS) as RedditNews
+            (news_list.adapter as NewsAdapter).clearAndAddNews(redditNews?.news)
+        } else {
+            requestNews()
         }
+
+    }
+
+    private fun requestNews() {
+        Log.d("Acerbi", redditNews?.after ?: "")
+        val subscription = newsManager.getNews(redditNews?.after ?: "")
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                { retrievedNews ->
+                    redditNews = retrievedNews
+                    (news_list.adapter as NewsAdapter).addNews(retrievedNews.news) },
+                { e -> Snackbar.make(news_list, "Error retrieving news: ${e.message}", Snackbar.LENGTH_LONG).show() })
+
+        subscriptions.add(subscription)
     }
 
     private fun initAdapter() {
@@ -50,4 +84,12 @@ class NewsFragment : Fragment() {
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle?) {
+        super.onSaveInstanceState(outState)
+
+        val news = (news_list.adapter as NewsAdapter).getNews()
+        if(redditNews != null && !news.isNotEmpty()) {
+            outState?.putParcelable(KEY_REDDIT_NEWS, redditNews?.copy(news = news))
+        }
+    }
 }

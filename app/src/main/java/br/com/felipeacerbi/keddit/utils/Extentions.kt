@@ -1,5 +1,9 @@
 package br.com.felipeacerbi.keddit.utils
 
+import android.content.Context
+import android.os.Parcel
+import android.os.Parcelable
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,7 +20,7 @@ fun ViewGroup.inflate(layoutId: Int, attachToRoot: Boolean = false): View {
     return LayoutInflater.from(context).inflate(layoutId, this, attachToRoot)
 }
 
-fun ImageView.loadImage(imageUrl: String) {
+fun ImageView.loadImage(context: Context, imageUrl: String) {
     if(imageUrl.isEmpty()) {
         Picasso.with(context).load(R.mipmap.ic_launcher).into(this)
     } else {
@@ -24,23 +28,31 @@ fun ImageView.loadImage(imageUrl: String) {
     }
 }
 
+inline fun <reified T : Parcelable> createParcel(
+        crossinline createFromParcel: (Parcel) -> T?): Parcelable.Creator<T> =
+        object : Parcelable.Creator<T> {
+            override fun createFromParcel(source: Parcel): T? = createFromParcel(source)
+            override fun newArray(size: Int): Array<out T?> = arrayOfNulls(size)
+        }
+
+
 fun Long.getFriendlyTime(): String {
     val dateTime = Date(this * 1000)
     val sb = StringBuffer()
     val current = Calendar.getInstance().time
     var diffInSeconds = ((current.time - dateTime.time) / 1000).toInt()
 
-    val sec = if (diffInSeconds >= 60) (diffInSeconds % 60).toInt() else diffInSeconds.toInt()
+    val sec = if (diffInSeconds >= 60) (diffInSeconds % 60) else diffInSeconds
     diffInSeconds = diffInSeconds / 60
-    val min = if (diffInSeconds >= 60) (diffInSeconds % 60).toInt() else diffInSeconds.toInt()
+    val min = if (diffInSeconds >= 60) (diffInSeconds % 60) else diffInSeconds
     diffInSeconds = diffInSeconds / 60
-    val hrs = if (diffInSeconds >= 24) (diffInSeconds % 24).toInt() else diffInSeconds.toInt()
+    val hrs = if (diffInSeconds >= 24) (diffInSeconds % 24) else diffInSeconds
     diffInSeconds = diffInSeconds / 24
-    val days = if (diffInSeconds >= 30) (diffInSeconds % 30).toInt() else diffInSeconds.toInt()
+    val days = if (diffInSeconds >= 30) (diffInSeconds % 30) else diffInSeconds
     diffInSeconds = diffInSeconds / 30
-    var months = if (diffInSeconds >= 12) (diffInSeconds % 12).toInt() else diffInSeconds.toInt()
+    var months = if (diffInSeconds >= 12) (diffInSeconds % 12) else diffInSeconds
     diffInSeconds = diffInSeconds / 12
-    val years = diffInSeconds.toInt()
+    val years = diffInSeconds
 
     if (years > 0) {
         if (years == 1) {

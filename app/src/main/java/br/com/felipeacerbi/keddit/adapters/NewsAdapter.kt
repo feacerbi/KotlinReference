@@ -40,7 +40,7 @@ class NewsAdapter : Adapter<RecyclerView.ViewHolder>() {
     }
 
     override fun getItemViewType(position: Int): Int {
-        return this.items[position].getViewType()
+        return items[position].getViewType()
     }
 
     fun addNews(news: List<RedditNewsItem>) {
@@ -55,11 +55,12 @@ class NewsAdapter : Adapter<RecyclerView.ViewHolder>() {
         notifyItemRangeChanged(initPosition, items.size + 1 /* plus loading item */)
     }
 
-    fun clearAndAddNews(news: List<RedditNewsItem>) {
+    fun clearAndAddNews(news: List<RedditNewsItem>?) {
         items.clear()
         notifyItemRangeRemoved(0, getLastPosition())
 
-        items.addAll(news)
+        if(news != null) items.addAll(news)
+
         items.add(loadingItem)
         notifyItemRangeInserted(0, items.size)
     }

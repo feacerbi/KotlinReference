@@ -28,7 +28,7 @@ class NewsDelegateAdapter : ViewTypeDelegateAdapter {
             RecyclerView.ViewHolder(viewParent.inflate(R.layout.news_item)) {
 
         fun bind(item: RedditNewsItem) = with(itemView) {
-            img_thumbnail.loadImage(item.thumbnail)
+            img_thumbnail.loadImage(context, item.thumbnail)
             author.text = item.author
             description.text = item.title
             comments.text = "${item.numComments} comments"
