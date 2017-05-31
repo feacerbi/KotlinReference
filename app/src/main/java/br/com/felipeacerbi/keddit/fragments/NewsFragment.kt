@@ -4,11 +4,11 @@ import android.os.Bundle
 import android.support.design.widget.Snackbar
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import br.com.felipeacerbi.keddit.R
+import br.com.felipeacerbi.keddit.app.ReferenceApplication
 import br.com.felipeacerbi.keddit.adapters.NewsAdapter
 import br.com.felipeacerbi.keddit.models.RedditNews
 import br.com.felipeacerbi.keddit.utils.InfiniteScrollListener
@@ -17,6 +17,7 @@ import br.com.felipeacerbi.keddit.utils.inflate
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.news_fragment.*
+import javax.inject.Inject
 
 /**
  * Created by feaac on 5/19/2017.
@@ -31,11 +32,14 @@ class NewsFragment : RxBaseFragment() {
         LinearLayoutManager(context)
     }
 
-    val newsManager: NewsManager by lazy {
-        NewsManager()
-    }
+    @Inject lateinit var newsManager: NewsManager
 
     private var redditNews: RedditNews? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        ReferenceApplication.newsComponent.inject(this)
+    }
 
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return container?.inflate(R.layout.news_fragment)
@@ -65,7 +69,6 @@ class NewsFragment : RxBaseFragment() {
     }
 
     private fun requestNews() {
-        Log.d("Acerbi", redditNews?.after ?: "")
         val subscription = newsManager.getNews(redditNews?.after ?: "")
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())

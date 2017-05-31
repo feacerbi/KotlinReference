@@ -4,12 +4,15 @@ import br.com.felipeacerbi.keddit.models.RedditNews
 import br.com.felipeacerbi.keddit.models.RedditNewsItem
 import br.com.felipeacerbi.keddit.retrofit.RestAPI
 import io.reactivex.Observable
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Created by felipe.acerbi on 25/05/2017.
  */
 
-class NewsManager(private val restApi: RestAPI = RestAPI()) {
+@Singleton
+class NewsManager @Inject constructor(private val restApi: RestAPI) {
 
     fun getNews(after: String, limit: String = "10"): Observable<RedditNews> {
         return Observable.create {
